@@ -1,0 +1,5 @@
+(sym_lib_table
+	(version 7)
+	(lib (name "mp") (type "KiCad") (uri "${KIPRJMOD}/lib/mp.kicad_sym") (options "") (descr "Imported LCSC parts"))
+	(lib (name "mpx") (type "KiCad") (uri "${KIPRJMOD}/lib/mpx.kicad_sym") (options "") (descr "Power, flag and test point symbols"))
+)
