@@ -40,3 +40,6 @@ See `docs/requirements.md` (3.3 V in; +2.75 V, -2.75 V, +1.375 V out; 5 mA max e
 
 ## Controller-driven rails (drawn on the right of the sheet, paper A2)
 See `docs/controller-rails.md` and `tools/controller_rails_model.py`. A separate +2.75 V input (J3) powers the abstract low-power STM32 (header J5) and the pin-driven stages; outputs +1.375 V and -2.75 V (separate series jumpers JP5 = charge pump A and JP6 = inductor stage B, fit only one) on J4.
+
+## PCB
+`mini-power/mini-power.kicad_pcb` is generated, like the schematic: `tools/pcb_place.py`, `tools/pcb_route.py`, `tools/pcb_finish.py` (run with KiCad's Python), details and rebuild steps in `docs/pcb.md`. The board is split in two clearly separated sections at x = 50 mm: STANDALONE (left, +3.3 V) and CONTROLLER-DRIVEN (right, +2.75 V, STM32 on J5); only the GND plane is shared. Rules: 0.10 mm clearance, 0.15 mm tracks, 0.5/0.3 mm vias, 100 x 100 mm, one 0.5 mm test point per net. Always finish with `kicad-cli pcb drc --schematic-parity`.

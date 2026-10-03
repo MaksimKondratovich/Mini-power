@@ -1,10 +1,61 @@
 (footprint "TestPoint_0.5mm"
-	(version 20240108)
+	(version 20241229)
 	(generator "pcbnew")
+	(generator_version "9.0")
 	(layer "F.Cu")
 	(descr "Test point: round bare copper pad, 0.5 mm diameter, solder mask opening, no paste")
+	(property "Reference" "REF**"
+		(at 0 -1.2 0)
+		(layer "F.SilkS")
+		(uuid "317ef241-3d66-4fc8-b4fd-de90558fdaf3")
+		(effects
+			(font
+				(size 0.8 0.8)
+				(thickness 0.12)
+			)
+		)
+	)
+	(property "Value" "TestPoint_0.5mm"
+		(at 0 1.2 0)
+		(layer "F.Fab")
+		(uuid "e8ab19b3-ba71-4280-b79d-7016bb85c8e9")
+		(effects
+			(font
+				(size 0.8 0.8)
+				(thickness 0.12)
+			)
+		)
+	)
+	(property "Datasheet" ""
+		(at 0 0 0)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "fe3078f9-df50-43ba-a87b-5481a8094716")
+		(effects
+			(font
+				(size 1.27 1.27)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Description" ""
+		(at 0 0 0)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "24e084fb-d9e9-4603-85d5-629c464ecd46")
+		(effects
+			(font
+				(size 1.27 1.27)
+				(thickness 0.15)
+			)
+		)
+	)
 	(attr smd exclude_from_pos_files exclude_from_bom)
-	(property "Reference" "REF**" (at 0 -1.2 0) (layer "F.SilkS") (effects (font (size 0.8 0.8) (thickness 0.12))))
-	(property "Value" "TestPoint_0.5mm" (at 0 1.2 0) (layer "F.Fab") (effects (font (size 0.8 0.8) (thickness 0.12))))
-	(pad "1" smd circle (at 0 0) (size 0.5 0.5) (layers "F.Cu" "F.Mask"))
+	(pad "1" smd circle
+		(at 0 0)
+		(size 0.5 0.5)
+		(layers "F.Cu" "F.Mask")
+		(uuid "98fa475a-6d59-48a9-99f1-77192a319aff")
+	)
+	(embedded_fonts no)
 )
