@@ -104,3 +104,61 @@ So option B **needs the controller to regulate it**: measure the rail (a divider
   - Loading: the datasheet allows up to 20 pF at the output without an isolation resistor. Keep SENSE short, use a long ADC sampling time, or feed an STM32 comparator input (no sampling capacitor) for the burst loop. A larger output capacitor would slow the loop: the rail moves 0.21 V per ms at 1 mA with 4.7 uF.
 - **JP5** (option A) and **JP6** (option B) are separate series current-measurement jumpers between each stage and the -2.75 V output net, which goes to **J4**. Fit only one of them: with both fitted the two converters would drive the same rail against each other. Leave the unused stage undriven (its controller pin idle).
 - Net `SW_PB` is the option-B switch node (the IC buck B already uses `SW_B`). Every net has exactly one test point (29 nets in total).
+
+## 8. Duty cycles for the controller-generated rails
+Same assumptions as section 2 (GPIO 40 ohm each side, 100 uH with 4 ohm DCR, 2 MHz, +2.75 V). Reproduce with `python tools/controller_rails_model.py` (the buck duty comes from `buck_case`).
+
+### 8.1 +1.375 V buck (BUCK_DRV, forced continuous conduction)
+Ideal duty: D = Vout / Vdd = 1.375 / 2.75 = **0.500**. The pin and inductor resistance (R = 40 + 4 = 44 ohm average) drops the output by I x R, so the duty has to be raised: D = (Vout + I x R) / Vdd.
+
+| Load | I x R | Duty for exactly 1.375 V |
+|---|---|---|
+| 0.1 mA (10 %) | 4.4 mV | **0.5016** |
+| 1 mA (100 %, typical) | 44 mV | **0.5160** |
+| 2 mA (200 %) | 88 mV | **0.5320** |
+
+- **Unregulated choice:** D = 0.516 (set for the typical load). Then Vout is 1.415 / 1.375 / 1.331 V at 0.1 / 1 / 2 mA (+2.9 % / -3.2 %), as in section 3.3. Sensitivity: dVout/dD = 2.75 V per unit of duty, so 1 % of duty is 27.5 mV.
+- **Timer resolution:** the duty step is f_pwm / f_timer, and one step moves the output by 2.75 V / counts. The target 0.516 must be rounded to whole counts at 2 MHz:
+
+| Timer clock | Counts per 2 MHz period | Nearest duty | Vout at 1 mA | Step |
+|---|---|---|---|---|
+| 32 MHz | 16 | 8 / 16 = 0.500 | 1.331 V (-44 mV) | 172 mV |
+| 48 MHz | 24 | 12 / 24 = 0.500 | 1.331 V (-44 mV) | 115 mV |
+| 64 MHz | 32 | 17 / 32 = 0.531 | 1.417 V (+42 mV) | 86 mV |
+| 80 MHz | 40 | 21 / 40 = 0.525 | 1.400 V (+25 mV) | 69 mV |
+| 160 MHz | 80 | 41 / 80 = 0.5125 | 1.365 V (-10 mV) | 34 mV |
+| 170 MHz | 85 | 44 / 85 = 0.518 | 1.380 V (+5 mV) | 32 mV |
+
+  A low-power STM32 usually has a 32 to 80 MHz timer, so with a fixed 2 MHz the output lands within about +/-45 mV (3 %) of 1.375 V. To hit the target more closely, dither the duty between two neighbouring counts (the 100 uH and the output capacitor average it) or pick a frequency whose counts per period give 0.516 (for example 62 counts: 32 / 62 = 0.516 at about 1.03 MHz with a 64 MHz timer, but that halves L x f and raises the ripple loss).
+- **If the controller closes the loop** it only needs to nudge D between about 0.50 and 0.53 to hold 1.375 V from 0.1 to 2 mA.
+
+### 8.2 -2.75 V option A (charge pump, A_DRV)
+- The flying capacitor needs a symmetric square wave: **D = 0.50** (equal charge and transfer phases). The duty does not set the output voltage; the output is -(2.75 V - 2 x Vf - I x R_out) = -2.43 / -2.23 / -2.11 V at 0.1 / 1 / 2 mA.
+- Any frequency from about 100 kHz to 1 MHz works. At 500 kHz the 1 uF flying capacitor adds 1 / (f x C) = 2 ohm of output resistance.
+
+### 8.3 -2.75 V option B (P-FET + inductor, B_DRV, burst mode)
+The gate is low (Q1 on) for a fixed on-time and the controller varies how often it fires. With L6 = 47 uH, Ipk = 50 mA, Vdd = 2.75 V, Vf = 0.2 V:
+- On-time (gate low): ton = Ipk x L / Vdd = 50 mA x 47 uH / 2.75 V = **0.855 us**.
+- Discharge time (through D4): toff = Ipk x L / (2.75 + 0.2) = 0.797 us, so a pulse is 1.65 us long and the inductor current reaches zero before the next pulse as long as the pulse period stays above that.
+- Energy per pulse: 0.5 x L x Ipk^2 = 58.8 nJ; at 77 % efficiency 45 nJ reaches the output.
+
+| Load | Output power | Pulse rate needed | Pulse period | Average on-duty (ton x rate) |
+|---|---|---|---|---|
+| 0.1 mA (10 %) | 0.275 mW | 6.1 kHz | 164 us | 0.5 % |
+| 1 mA (100 %) | 2.75 mW | 61 kHz | 16.5 us | **5.2 %** |
+| 2 mA (200 %) | 5.5 mW | 122 kHz | 8.2 us | 10.4 % |
+
+- The effective duty is therefore 0.5 to 10 %, and the pulse width is a constant 0.855 us. With a 64 MHz timer that is 55 counts per pulse (resolution 1.8 %); with 32 MHz 27 counts.
+- Inductor tolerance matters: the LB2012T470M is +/-20 %, so the same 0.855 us gives a peak current from 42 to 62 mA. The 60 mA rating means ton should be set to about 0.8 us, or measured on the board and trimmed in firmware.
+
+### 8.4 Summary: duty and frequency of all three converter families
+| Rail | Source | Frequency | Duty |
+|---|---|---|---|
+| +2.8 V | TPS62840 (integrated) | 1.8 MHz PWM; about 3 / 34 / 168 kHz at 0.1 / 1 / 5 mA | 0.848 |
+| +1.4 V | TPS62841 (integrated) | 1.8 MHz PWM; about 2 / 18 / 88 kHz at 0.1 / 1 / 5 mA | 0.424 |
+| -2.8 V | LT8330 (integrated) | 2 MHz oscillator; Burst Mode (about 11 / 114 / 572 kHz at 0.1 / 1 / 5 mA) | CCM 0.484 |
+| +1.375 V | STM32 pin (BUCK_DRV) | 2 MHz fixed | 0.516 (0.5016 to 0.532 over 0.1 to 2 mA) |
+| -2.75 V option A | STM32 pin (A_DRV) | 500 kHz | 0.50 |
+| -2.75 V option B | STM32 pin (B_DRV) | pulse rate 6 / 61 / 122 kHz at 0.1 / 1 / 2 mA | ton 0.855 us fixed; average 0.5 / 5.2 / 10.4 % |
+
+The integrated rails are in [power-architecture.md](power-architecture.md) section 8. These values are also written on the schematic next to each block.

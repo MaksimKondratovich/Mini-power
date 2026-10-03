@@ -299,11 +299,13 @@ def cap_v(name, value, p_top):
     return ref, top, bot
 
 
-def buck(tag, X, Y, ic, rset_part, rset_val, jp_ref, raw_net, out_net, title, notes):
+def buck(tag, X, Y, ic, rset_part, rset_val, jp_ref, raw_net, out_net, title, notes, timing=""):
     u = nxt("U")
     pins = s.place("mp", ic, u, ic.replace("DLCR", "DLC"), X, Y, ref_at=(X, Y - 9.5), val_at=(X, Y + 8.5))
     s.text(title, (X - 30.48, Y - 30.48), size=2.0, bold=True)
     s.text(notes, (X - 30.48, Y - 25.4))
+    if timing:
+        s.text(timing, (X - 30.48, Y - 21.59))
 
     # --- control pins: short stubs with labels
     s.stub_label(pins["1"], "GND", "left")
@@ -368,11 +370,13 @@ def buck(tag, X, Y, ic, rset_part, rset_val, jp_ref, raw_net, out_net, title, no
 # Block A: +2.8 V
 buck("A", 114.3, 63.5, IC840, R287, "28.7k 1%", "JP1", "+2V8_IC", "+2V8",
      "Block A: +2.8 V buck (U1 TPS62840, RSET 28.7k selects 2.8 V)",
-     "3.3 V -> 2.8 V, 5 mA max. MODE = GND: auto PFM, 60 nA Iq. Output passes JP1 (jumper or ammeter).")
+     "3.3 V -> 2.8 V, 5 mA max. MODE = GND: auto PFM, 60 nA Iq. Output passes JP1 (jumper or ammeter).",
+     "Switching: 1.8 MHz nominal (PWM), duty D = 2.8 / 3.3 = 0.848 (ton 471 ns). At 0.1 / 1 / 5 mA it runs in power-save (PFM) at about 3 / 34 / 168 kHz (estimate).")
 # Block B: +1.4 V
 buck("B", 114.3, 139.7, IC841, R523, "52.3k 1%", "JP2", "+1V4_IC", "+1V4",
      "Block B: +1.4 V buck (U2 TPS62841, RSET 52.3k selects 1.4 V)",
-     "3.3 V -> 1.4 V, 5 mA max. MODE = GND: auto PFM, 60 nA Iq. Output passes JP2 (jumper or ammeter).")
+     "3.3 V -> 1.4 V, 5 mA max. MODE = GND: auto PFM, 60 nA Iq. Output passes JP2 (jumper or ammeter).",
+     "Switching: 1.8 MHz nominal (PWM), duty D = 1.4 / 3.3 = 0.424 (ton 236 ns). At 0.1 / 1 / 5 mA it runs in power-save (PFM) at about 2 / 18 / 88 kHz (estimate).")
 
 # Block C: -2.8 V inverting converter (LT8330, dual-inductor topology)
 def passive_h(part, value, cx, cy, ref_prefix, ref_at=None, val_at=None):
@@ -395,11 +399,15 @@ def passive_v(part, value, cx, cy, ref_prefix):
 CX, CY = 114.3, 241.3
 YR = CY - 25.4  # power row
 NEG = "-2V8_IC"
-s.text("Block C: -2.8 V inverting converter (U3 LT8330, dual-inductor topology)", (CX - 40.64, YR - 17.78), size=2.0, bold=True)
+s.text("Block C: -2.8 V inverting converter (U3 LT8330, dual-inductor topology)", (CX - 40.64, YR - 24.13), size=2.0, bold=True)
 s.text("L3/L4, CDC and D1 form the inverting stage. The divider R3/R4 sets VOUT = -0.8 V x (1 + R3/R4) = -2.79 V. EN/UVLO is tied to +3V3.",
-       (CX - 40.64, YR - 12.7))
+       (CX - 40.64, YR - 19.05))
 s.text("VIN must stay above 3.0 V (LT8330 minimum). SW swings between 0 V and VIN + |VOUT| = 6.1 V. Output passes JP3.",
-       (CX - 40.64, YR - 8.89))
+       (CX - 40.64, YR - 15.24))
+s.text("Switching: fixed 2 MHz oscillator (CCM duty D = (2.79 + 0.3) / (2.79 + 0.3 + 3.3) = 0.484, ton 242 ns); below about 17 mA it runs in Burst Mode:",
+       (CX - 40.64, YR - 11.43))
+s.text("single pulses (ton about 80 ns, 240 mA switch limit) at about 11 / 114 / 572 kHz for 0.1 / 1 / 5 mA (estimate).",
+       (CX - 40.64, YR - 7.62))
 u3 = nxt("U")
 pins = s.place("mp", IC8330, u3, "LT8330", CX, CY, ref_at=(CX, CY - 9.0), val_at=(CX, CY + 8.0), mirror=True)
 # mirrored pins: left VIN(6) INTVCC(5) EN(4); right SW(1) GND(2) FBX(3)
@@ -593,6 +601,8 @@ s.text("BUCK_DRV is a push-pull timer output (about 2 MHz, duty 0.516). L5 and t
        (SX, yD - 20.32))
 s.text("so the stage stays in continuous conduction at any load and the unregulated output follows the load only by the pin resistance.",
        (SX, yD - 16.51))
+s.text("BUCK_DRV: f = 2 MHz, duty D = 0.516 for 1.375 V at 1 mA (0.5016 at 0.1 mA, 0.532 at 2 mA; ideal 1.375 / 2.75 = 0.500). Needs a timer clock of 64 MHz or more for steps below 90 mV.",
+       (SX, yD - 12.7))
 start = (SX, yD)
 s.label("BUCK_DRV", start)
 _, l5a, l5b = passive_h(L100, "100uH", SX + 25.4, yD, "L")
@@ -615,6 +625,7 @@ yA = 129.54
 s.text("Block E-A: -2.75 V inverter, option A (pin-driven charge pump, no inductor)", (SX, yA - 25.4), size=2.0, bold=True)
 s.text("A_DRV swings the flying capacitor 0 to 2.75 V; D2 and D3 steer the charge. Unregulated output about -2.1 to -2.4 V (cannot reach -2.75 V).",
        (SX, yA - 20.32))
+s.text("A_DRV: f = 500 kHz (100 kHz to 1 MHz works), duty D = 0.50 (symmetric square wave).", (SX, yA - 16.51))
 start = (SX, yA)
 s.label("A_DRV", start)
 _, cfa, cfb = passive_h(C1U, "1uF/50V", SX + 25.4, yA, "C")
@@ -653,6 +664,8 @@ s.text("B_DRV gates Q1 (low = on). While Q1 is on, L6 charges from +2.75 V; when
        (SX, yB - 35.56))
 s.text("U4 (LPV521, 0.35 uA) inverts the rail into SENSE = 0.499 x |VRAIL| (1.37 V at -2.75 V); the controller skips pulses once SENSE reaches the target.",
        (SX, yB - 31.75))
+s.text("B_DRV: fixed ton = 0.855 us (Ipk 50 mA in L6), toff 0.80 us; burst rate 6 / 61 / 122 kHz = average duty 0.5 / 5.2 / 10.4 % for 0.1 / 1 / 2 mA.",
+       (SX, yB - 27.94))
 start = (SX, yB)
 s.label("B_DRV", start)
 qx = SX + 31.75

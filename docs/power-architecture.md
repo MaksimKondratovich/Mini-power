@@ -110,3 +110,17 @@ The first proposal (a TPS62840 wired as an inverting buck-boost) was rejected by
 - Extended part types: TPS62840DLC, TPS62841DLC, LT8330, PMEG6010CEJ, inductor C337893, 10 uF cap C23692971, 4.7 pF cap C1569, 1 % resistors 28.7 k / 52.3 k / 402 k, header C2691448 and C492401 (all PZ254V-series pin headers are extended).
 - Basic part types: 4.7 uF C23733, 1 uF C15849, 1 M C26083.
 - Test points are a footprint only (no purchased part).
+
+## 8. Switching frequency and duty cycle of the integrated rails
+Nominal values, VIN = 3.3 V, 2.2 uH, loads 0.1 / 1 / 2 / 5 mA. Reproduce with `python tools/integrated_rails_model.py`. The datasheet figures are the 1.8 MHz and 2 MHz oscillators; the light-load numbers are first-order estimates (see the assumptions below), not datasheet values.
+
+| Rail | IC | Full-load switching | Duty | Light-load operation (0.1 / 1 / 2 / 5 mA) |
+|---|---|---|---|---|
+| +2.8 V | TPS62840 | 1.8 MHz nominal (PWM) | D = 2.8 / 3.3 = **0.848** (ton 471 ns) | power-save (PFM): about **3.4 / 34 / 67 / 168 kHz**, average on-duty 0.16 / 1.6 / 3.2 / 7.9 % |
+| +1.4 V | TPS62841 | 1.8 MHz nominal (PWM) | D = 1.4 / 3.3 = **0.424** (ton 236 ns) | power-save (PFM): about **1.8 / 18 / 35 / 88 kHz**, average on-duty 0.04 / 0.4 / 0.8 / 2.1 % |
+| -2.8 V | LT8330 | fixed 2 MHz oscillator (1.85 to 2.15 MHz) | CCM duty D = (2.79 + 0.3) / (2.79 + 0.3 + 3.3) = **0.484** (ton 242 ns) | Burst Mode below about 17 mA: single pulses of about 80 ns (240 mA switch limit) at about **11 / 114 / 229 / 572 kHz**, average on-duty 0.09 / 0.9 / 1.8 / 4.6 % |
+
+Assumptions behind the light-load estimates:
+- **TPS6284x:** the datasheet only says the power-save frequency "varies linearly with the load current". I assume every power-save pulse keeps the PWM on-time ton = D / 1.8 MHz, so the pulse carries Q = 0.5 x Ipk x (ton + toff) with Ipk = (VIN - VOUT) x ton / L (107 mA and 204 mA for the 2.8 V and 1.4 V rails) and toff = Ipk x L / VOUT; then f = Iload / Q (Q = 29.8 nC and 56.5 nC). The PWM / power-save boundary sits at half the ripple current (54 mA and 102 mA), far above the 5 mA maximum, so these rails are in power-save at every load.
+- **LT8330:** the datasheet says the burst current limit is about 240 mA and that the frequency rises with load up to the fixed 2 MHz (its Figure 1 is for a 48 V boost, not this converter). I take the pulse as 240 mA in the switch split equally between the two 2.2 uH inductors, which stores 0.5 x (2.2 + 2.2) uH x (120 mA)^2 = 31.7 nJ per pulse (24.4 nJ delivered at 77 %). The CCM duty uses an assumed diode drop of 0.3 V.
+- The duty and frequency of the controller-driven rails are in [controller-rails.md](controller-rails.md) section 8.
