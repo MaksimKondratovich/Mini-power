@@ -93,7 +93,7 @@ So option B **needs the controller to regulate it**: measure the rail (a divider
 ## 7. What is in the schematic
 - **J3** (+2.75 V in), **J5** (6-pin controller interface: +2.75 V, GND, BUCK_DRV, A_DRV, B_DRV, SENSE), **J4** (outputs: GND, +1.375 V, -2.75 V).
 - **Block D:** L5 100 uH (C223273), C10 4.7 uF (output ripple 3.4 mA / (8 x 2 MHz x 4.7 uF) = 0.05 mV, so the capacitor only sets the load-step behaviour), series jumper **JP4**.
-- **Block E-A (option A):** C11 1 uF flying capacitor, D2 and D3 PMEG6010CEJ (C406049), C12 4.7 uF output capacitor. Charge pump frequency is set by the controller; at 500 kHz the 1 uF flying capacitor adds only 1 / (f x C) = 2 ohm to the output resistance.
+- **Block E-A (option A):** C11 1 uF flying capacitor (0402, 25 V X5R, C52923), D2 and D3 PMEG6010CEJ (C406049), C12 4.7 uF output capacitor. Charge pump frequency is set by the controller; at 500 kHz the 1 uF flying capacitor adds only 1 / (f x C) = 2 ohm to the output resistance.
 - **Block E-B (option B):** Q1, L6 47 uH (C223254), D4 PMEG6010CEJ, C13 4.7 uF, gate pull-up R5 1 Mohm (keeps Q1 off while the controller is in reset; costs 2.75 uA only while the pin is low), and the **sense amplifier** below.
 - **Sense amplifier (U4, LPV521, C779403, extended):** the first sense circuit was a 3 Mohm resistor divider, which the controller cannot read (about 600 kohm source impedance against an ADC sampling capacitor, plus leakage). It is replaced by a nanopower **inverting amplifier** with a low-impedance output.
   - Gain: SENSE = -(R7 / R6) x V_RAIL = -(2.49 M / 4.99 M) x (-2.75 V) = **+1.372 V**. Full scale (SENSE = 2.75 V) is a rail of -5.51 V, so the whole range is readable.

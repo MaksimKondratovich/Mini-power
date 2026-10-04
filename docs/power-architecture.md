@@ -90,8 +90,8 @@ The first proposal (a TPS62840 wired as an inverting buck-boost) was rejected by
 |---|---|---|---|
 | U3 | LT8330ES6#TRMPBF | C580285 | extended |
 | L3, L4 | DFE201612E-2R2M=P2, 2.2 uH | C337893 | extended |
-| C6 (coupling) | 1 uF 50 V X5R 0603 CL10A105KB8NNNC | C15849 | basic |
-| C9 (INTVCC, datasheet minimum 1 uF) | same | C15849 | basic |
+| C6 (coupling) | 1 uF 25 V X5R 0402 CL05A105KA5NQNC | C52923 | basic |
+| C9 (INTVCC, datasheet minimum 1 uF) | same | C52923 | basic |
 | C5 (input) | 4.7 uF 10 V X5R 0402 | C23733 | basic |
 | C7 (output) | 10 uF 6.3 V X5R 0402 | C23692971 | extended |
 | C8 (phase lead) | 4.7 pF 50 V C0G 0402 0402CG4R7C500NT | C1569 | extended |
@@ -100,6 +100,7 @@ The first proposal (a TPS62840 wired as an inverting buck-boost) was rejected by
 | R4 | 402 k 1 % 0402 | C25785 | extended |
 
 ### 6.5 Risks
+0. **1 uF in 0402:** C6 and C9 were changed from 0603 to 0402 (25 V X5R, basic). The 25 V rating keeps the DC-bias loss low, but the datasheet wants at least 1 uF on INTVCC: at about 3 V an 0402 X5R part typically loses roughly 10 to 15 % (not checked against this part's curve), so C9 may sit slightly under 1 uF. Use 2.2 uF (same package) if INTVCC shows ripple or start-up trouble.
 1. **Input headroom:** the LT8330 needs VIN of at least 3.0 V. Your 3.3 V input leaves 0.3 V of margin, so the rail will not regulate if the supply sags below 3.0 V.
 2. **Diode leakage** appears as extra load on a 1 mA rail (datasheet note). PMEG6010CEJ is specified at 50 uA maximum at 60 V; at 6 V it should be far lower, but I have not seen the curve.
 3. **Uncoupled inductors:** the datasheet example uses a coupled pair; I use two separate 2.2 uH parts.
@@ -108,7 +109,7 @@ The first proposal (a TPS62840 wired as an inverting buck-boost) was rejected by
 
 ## 7. Cost and part-count summary
 - Extended part types: TPS62840DLC, TPS62841DLC, LT8330, PMEG6010CEJ, inductor C337893, 10 uF cap C23692971, 4.7 pF cap C1569, 1 % resistors 28.7 k / 52.3 k / 402 k, header C2691448 and C492401 (all PZ254V-series pin headers are extended).
-- Basic part types: 4.7 uF C23733, 1 uF C15849, 1 M C26083.
+- Basic part types: 4.7 uF C23733, 1 uF C52923, 1 M C26083.
 - Test points are a footprint only (no purchased part).
 
 ## 8. Switching frequency and duty cycle of the integrated rails

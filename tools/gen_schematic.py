@@ -239,7 +239,7 @@ HDR2 = "PZ254V-11-02P"
 HDR4 = "PZ254V-11-04P_C2691448"
 IC8330 = "LT8330ES6#TRMPBF"
 DIODE = "PMEG6010CEJ,115"
-C1U = "CL10A105KB8NNNC"
+C1U = "CL05A105KA5NQNC"
 C4P7 = "0402CG4R7C500NT"
 R1M = "0402WGF1004TCE"
 R402K = "0402WGF4023TCE"
@@ -436,7 +436,7 @@ s.wire(sw, swn)
 s.label("SW_C", (sw[0], sw[1] - 5.08))
 
 # CDC: SW node -> node A
-_, cda, cdb = passive_h(C1U, "1uF/50V", CX + 25.4, YR, "C")
+_, cda, cdb = passive_h(C1U, "1uF/25V", CX + 25.4, YR, "C")
 anode = (CX + 38.1, YR)
 s.wire(swn, cda)
 s.wire(cdb, anode)
@@ -499,7 +499,7 @@ s.stub_label(pins["4"], "+3V3", "left")
 iv = pins["5"]
 ivx = CX - 22.86
 s.wire(iv, (ivx, iv[1]))
-ct2, cb2 = passive_v(C1U, "1uF/50V", ivx, iv[1] + 12.7, "C")
+ct2, cb2 = passive_v(C1U, "1uF/25V", ivx, iv[1] + 12.7, "C")
 s.wire((ivx, iv[1]), (ivx, iv[1] + 3.81), ct2)
 gnd_symbol(cb2)
 s.label("INTVCC_C", (ivx, iv[1] + 7.62))
@@ -628,7 +628,7 @@ s.text("A_DRV swings the flying capacitor 0 to 2.75 V; D2 and D3 steer the charg
 s.text("A_DRV: f = 500 kHz (100 kHz to 1 MHz works), duty D = 0.50 (symmetric square wave).", (SX, yA - 16.51))
 start = (SX, yA)
 s.label("A_DRV", start)
-_, cfa, cfb = passive_h(C1U, "1uF/50V", SX + 25.4, yA, "C")
+_, cfa, cfb = passive_h(C1U, "1uF/25V", SX + 25.4, yA, "C")
 s.wire(start, (SX + 8.89, yA), cfa)
 test_point("A_DRV", SX + 8.89, yA, "up", "right")
 na = (SX + 38.1, yA)
